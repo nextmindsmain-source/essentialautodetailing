@@ -9,6 +9,7 @@ export const BIZ = {
 }
 
 export const NAV = [
+  ['Home', '#top'],
   ['Services', '#services'],
   ['How it works', '#process'],
   ['About', '#about'],
