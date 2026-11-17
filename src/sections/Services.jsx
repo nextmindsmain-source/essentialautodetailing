@@ -36,23 +36,23 @@ export default function Services() {
   }, [])
 
   return (
-    <section id="services" ref={sec} className="relative bg-canvas md:h-svh md:flex md:flex-col md:justify-center overflow-hidden py-20 md:py-0">
-      <div className="wrap px-6 flex items-end justify-between gap-8 mb-10">
+    <section id="services" ref={sec} className="relative bg-canvas md:h-svh md:flex md:flex-col overflow-hidden py-20 md:pt-28 md:pb-14">
+      <div className="wrap px-6 flex items-end justify-between gap-8 mb-10 md:mb-20 shrink-0">
         <div>
           <p className="label eyebrow-gap">What we do</p>
-          <h2 className="display text-[clamp(2rem,4.4vw,3.6rem)]">
+          <h2 className="display text-[clamp(2rem,4vw,3.4rem)] !leading-[1.15] pb-1">
             <SplitText text="Detailing, done properly." tag="span" textAlign="left" splitType="words" effect="blur" delay={60} />
           </h2>
         </div>
         <p className="hidden md:block label opacity-70">Keep scrolling →</p>
       </div>
 
-      <div className="hscroll-wrap">
-        <div ref={track} className="hscroll px-6 md:pl-[max(1.5rem,calc((100vw-78rem)/2+1.5rem))] md:pr-24">
+      <div className="hscroll-wrap md:flex-1 md:min-h-0">
+        <div ref={track} className="hscroll md:h-full px-6 md:pl-[max(1.5rem,calc((100vw-78rem)/2+1.5rem))] md:pr-24">
           {SERVICES.map((s, i) => {
             const Icon = ICONS[i]
             return (
-              <article key={s.n} data-cursor className="group relative shrink-0 w-[78vw] sm:w-[52vw] md:w-[27rem] h-[30rem] md:h-[58vh] md:max-h-[34rem] rounded-[1.75rem] overflow-hidden bg-white shadow-[0_30px_70px_-35px_rgba(61,65,154,.5)]">
+              <article key={s.n} data-cursor className="group relative shrink-0 w-[78vw] sm:w-[52vw] md:w-[27rem] h-[30rem] md:h-full md:max-h-[36rem] rounded-[1.75rem] overflow-hidden bg-white shadow-[0_30px_70px_-35px_rgba(61,65,154,.5)]">
                 <img className="svc-img absolute inset-0 h-full w-[116%] max-w-none object-cover transition-transform duration-700 group-hover:scale-105" src={`/img/svc-${i}.jpg`} alt={s.t} loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-white/0 to-transparent opacity-90" />
                 <span className="absolute left-5 top-5 label !text-white drop-shadow">{s.n}</span>
@@ -64,7 +64,7 @@ export default function Services() {
               </article>
             )
           })}
-          <a href={BIZ.book} data-cursor className="shrink-0 w-[70vw] sm:w-[40vw] md:w-[20rem] h-[30rem] md:h-[58vh] md:max-h-[34rem] rounded-[1.75rem] bg-ead-red text-white p-8 flex flex-col justify-between">
+          <a href={BIZ.book} data-cursor className="shrink-0 w-[70vw] sm:w-[40vw] md:w-[20rem] h-[30rem] md:h-full md:max-h-[36rem] rounded-[1.75rem] bg-ead-red text-white p-8 flex flex-col justify-between">
             <ArrowUpRight className="h-12 w-12" />
             <div>
               <p className="display text-3xl mb-3">Book your detail</p>
