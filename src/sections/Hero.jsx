@@ -65,25 +65,6 @@ export default function Hero() {
               B.current.style.cssText = `opacity:${b};transform:translateY(${(1 - b) * 50}px)`
               C.current.style.cssText = `opacity:${c};transform:translateY(${(1 - c) * 50}px);pointer-events:${c > 0.5 ? 'auto' : 'none'}`
               bar.current.style.transform = `scaleY(${p})`
-              // the shine: a streak of light that sweeps across the paint, twice, as you scroll
-              let sx = -100
-              let op = 0
-              for (const [a0, b0] of SEGMENTS) {
-                if (p > a0 && p < b0) {
-                  const t = (p - a0) / (b0 - a0)
-                  sx = -40 + t * 150
-                  op = Math.min(1, Math.sin(Math.PI * t) * 1.8)
-                }
-              }
-              shine.current.style.opacity = op
-              shine.current.style.transform = `translateX(${sx}vw) skewX(-20deg)`
-              const centre = sx + 17
-              glints.current.forEach((g, i) => {
-                if (!g) return
-                const k = op > 0 ? Math.max(0, 1 - Math.abs(centre - GLINTS[i][0]) / 10) : 0
-                g.style.opacity = k
-                g.style.transform = `translate(-50%, -50%) scale(${0.3 + k * 1.1}) rotate(${k * 90}deg)`
-              })
             }
             raf = requestAnimationFrame(loop)
           }
@@ -96,6 +77,60 @@ export default function Hero() {
       cancelAnimationFrame(raf)
       if (url) URL.revokeObjectURL(url)
     }
+  }, [canScrub])
+
+  // The shine. Idle: it glides across the car every few seconds. Scrolling: it follows your scroll.
+  useEffect(() => {
+    if (!canScrub) return
+    let raf
+    let lastP = -1
+    let lastMove = performance.now()
+    const CYCLE = 4600 // ms between idle sweeps
+    const SWEEP = 2000 // ms one idle sweep takes
+    const paint = (sx, op) => {
+      if (!shine.current) return
+      shine.current.style.opacity = op
+      shine.current.style.transform = `translateX(${sx}vw) skewX(-20deg)`
+      const centre = sx + 17
+      glints.current.forEach((g, i) => {
+        if (!g) return
+        const k = op > 0 ? Math.max(0, 1 - Math.abs(centre - GLINTS[i][0]) / 10) : 0
+        g.style.opacity = k
+        g.style.transform = `translate(-50%, -50%) scale(${0.3 + k * 1.1}) rotate(${k * 90}deg)`
+      })
+    }
+    const tick = (now) => {
+      const r = wrap.current.getBoundingClientRect()
+      const max = r.height - window.innerHeight
+      const p = Math.min(1, Math.max(0, -r.top / max))
+      if (Math.abs(p - lastP) > 0.0004) {
+        lastP = p
+        lastMove = now
+      }
+      let sx = -100
+      let op = 0
+      if (now - lastMove < 600) {
+        // scroll-driven
+        for (const [a0, b0] of SEGMENTS) {
+          if (p > a0 && p < b0) {
+            const t = (p - a0) / (b0 - a0)
+            sx = -40 + t * 150
+            op = Math.min(1, Math.sin(Math.PI * t) * 1.8)
+          }
+        }
+      } else if (r.bottom > window.innerHeight) {
+        // idle: an automatic sweep, only while the hero is pinned on screen
+        const t = ((now - lastMove) % CYCLE) / SWEEP
+        if (t < 1) {
+          sx = -40 + t * 150
+          op = Math.min(1, Math.sin(Math.PI * t) * 1.8)
+        }
+      }
+      paint(sx, op)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [canScrub])
 
   return (
