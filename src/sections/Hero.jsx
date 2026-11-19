@@ -10,6 +10,10 @@ const POSTER = '/hero-poster.jpg'
 // trapezoid: 0 -> 1 between a..b, hold to c, 1 -> 0 between c..d
 const beat = (p, a, b, c, d) => (p < a ? 0 : p < b ? (p - a) / (b - a) : p < c ? 1 : p < d ? 1 - (p - c) / (d - c) : 0)
 
+// Where the glints twinkle on the car (vw, vh), roughly the hood, windscreen, headlight and roof line.
+const GLINTS = [[47, 58], [56, 42], [66, 50], [78, 60], [61, 33]]
+const SEGMENTS = [[0.02, 0.4], [0.52, 0.95]]
+
 // A film you scroll: the video plays forward as you scroll down and backward as you scroll up.
 export default function Hero() {
   const wrap = useRef()
@@ -18,6 +22,8 @@ export default function Hero() {
   const A = useRef()
   const B = useRef()
   const C = useRef()
+  const shine = useRef()
+  const glints = useRef([])
   const canScrub = useRef(typeof window !== 'undefined' && window.innerWidth >= 900 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches).current
   const [ready, setReady] = useState(false)
 
@@ -59,6 +65,25 @@ export default function Hero() {
               B.current.style.cssText = `opacity:${b};transform:translateY(${(1 - b) * 50}px)`
               C.current.style.cssText = `opacity:${c};transform:translateY(${(1 - c) * 50}px);pointer-events:${c > 0.5 ? 'auto' : 'none'}`
               bar.current.style.transform = `scaleY(${p})`
+              // the shine: a streak of light that sweeps across the paint, twice, as you scroll
+              let sx = -100
+              let op = 0
+              for (const [a0, b0] of SEGMENTS) {
+                if (p > a0 && p < b0) {
+                  const t = (p - a0) / (b0 - a0)
+                  sx = -40 + t * 150
+                  op = Math.min(1, Math.sin(Math.PI * t) * 1.8)
+                }
+              }
+              shine.current.style.opacity = op
+              shine.current.style.transform = `translateX(${sx}vw) skewX(-20deg)`
+              const centre = sx + 17
+              glints.current.forEach((g, i) => {
+                if (!g) return
+                const k = op > 0 ? Math.max(0, 1 - Math.abs(centre - GLINTS[i][0]) / 10) : 0
+                g.style.opacity = k
+                g.style.transform = `translate(-50%, -50%) scale(${0.3 + k * 1.1}) rotate(${k * 90}deg)`
+              })
             }
             raf = requestAnimationFrame(loop)
           }
@@ -79,6 +104,16 @@ export default function Hero() {
         {/* full-bleed, untouched footage */}
         <img src={POSTER} alt="" className="absolute inset-0 h-full w-full object-cover object-[68%_center] md:object-center" style={{ opacity: ready ? 0 : 1 }} />
         <video ref={vid} muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+
+        {/* shine layer: only brightens the car, invisible on the white studio */}
+        <div className="pointer-events-none absolute inset-0 z-[5] hidden md:block" style={{ WebkitMaskImage: 'radial-gradient(ellipse 34% 30% at 62% 55%, #000 55%, transparent 100%)', maskImage: 'radial-gradient(ellipse 34% 30% at 62% 55%, #000 55%, transparent 100%)' }}>
+          <div ref={shine} className="absolute inset-y-0 left-0" style={{ width: '34vw', opacity: 0, mixBlendMode: 'screen', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,.18) 30%, rgba(255,255,255,.9) 50%, rgba(255,255,255,.18) 70%, transparent 100%)' }} />
+        </div>
+        {GLINTS.map(([x, y], i) => (
+          <svg key={i} ref={(el) => (glints.current[i] = el)} className="pointer-events-none absolute z-[6] hidden md:block" style={{ left: x + 'vw', top: y + 'vh', width: 46, height: 46, opacity: 0, filter: 'drop-shadow(0 0 8px rgba(255,255,255,.95))' }} viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#fff" d="M12 0 L14 10 L24 12 L14 14 L12 24 L10 14 L0 12 L10 10 Z" />
+          </svg>
+        ))}
 
         {/* beat 1: the promise */}
         <div ref={A} className="absolute inset-0 z-10 flex items-start px-6 pt-28 md:pt-[17vh]">
