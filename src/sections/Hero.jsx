@@ -52,46 +52,72 @@ export default function Hero() {
   const glints = useRef([])
   const progress = useRef(0)
   const mouse = useRef({ x: 0, y: 0 })
-  const canScrub = useRef(typeof window !== 'undefined' && window.innerWidth >= 900 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches).current
+  // The film scrubs on tablets and desktops. Scrubbing is driven directly by your scroll, so it is
+  // not gated on the "reduce motion" setting (many Windows PCs report it without the user knowing).
+  const canScrub = useRef(typeof window !== 'undefined' && window.innerWidth >= 768).current
   const [ready, setReady] = useState(false)
+  const readyRef = useRef(false)
 
-  // Load the film as a blob, then scrub it from scroll.
+  // Start scrubbing the moment the first frame is available, then swap in a fully downloaded copy.
   useEffect(() => {
     if (!canScrub) return
     let alive = true
     let url
     let raf
+    let started = false
+    const v = vid.current
+    const start = () => {
+      if (started || !alive) return
+      started = true
+      readyRef.current = true
+      setReady(true)
+      let cur = 0
+      let seeking = false
+      let last = -1
+      v.addEventListener('seeked', () => (seeking = false))
+      const loop = () => {
+        const dur = v.duration || 8
+        cur += (progress.current * (dur - 0.05) - cur) * 0.14
+        if (!seeking && Math.abs(cur - last) > 0.003) {
+          seeking = true
+          last = cur
+          v.currentTime = cur
+        }
+        raf = requestAnimationFrame(loop)
+      }
+      loop()
+    }
+    v.addEventListener('loadeddata', start)
+    v.src = VIDEO
+    v.load()
+    // in the background, fetch the whole file so seeking never waits on the network
     fetch(VIDEO)
       .then((r) => r.blob())
       .then((b) => {
         if (!alive) return
         url = URL.createObjectURL(b)
-        const v = vid.current
+        const t = v.currentTime
+        v.addEventListener('loadedmetadata', () => (v.currentTime = t), { once: true })
         v.src = url
-        v.onloadedmetadata = () => {
-          setReady(true)
-          let cur = 0
-          let seeking = false
-          let last = -1
-          v.addEventListener('seeked', () => (seeking = false))
-          const loop = () => {
-            cur += (progress.current * (v.duration - 0.05) - cur) * 0.14
-            if (!seeking && Math.abs(cur - last) > 0.003) {
-              seeking = true
-              last = cur
-              v.currentTime = cur
-            }
-            raf = requestAnimationFrame(loop)
-          }
-          loop()
-        }
       })
       .catch(() => {})
     return () => {
       alive = false
       cancelAnimationFrame(raf)
+      v.removeEventListener('loadeddata', start)
       if (url) URL.revokeObjectURL(url)
     }
+  }, [canScrub])
+
+  // Phones and small windows: the still image drifts and zooms slowly as you scroll.
+  useEffect(() => {
+    if (canScrub) return
+    const f = () => {
+      if (media.current) media.current.style.transform = `translate3d(0, ${window.scrollY * 0.12}px, 0) scale(${1.04 + Math.min(window.scrollY, 600) * 0.00022})`
+    }
+    f()
+    window.addEventListener('scroll', f, { passive: true })
+    return () => window.removeEventListener('scroll', f)
   }, [canScrub])
 
   // Everything that reacts to scroll and mouse: captions, parallax, exit transition, shine.
@@ -119,7 +145,8 @@ export default function Hero() {
       // mouse parallax on the footage (eased)
       mx += (mouse.current.x - mx) * 0.06
       my += (mouse.current.y - my) * 0.06
-      const zoom = 1.06
+      // if the film is not available yet (slow network), the still image zooms with your scroll instead
+      const zoom = readyRef.current ? 1.06 : 1.06 + p * 0.22
       media.current.style.transform = `translate3d(${mx * -16}px, ${my * -9}px, 0) scale(${zoom})`
 
       if (Math.abs(p - lp) > 0.0004) {
