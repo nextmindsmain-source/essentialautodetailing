@@ -13,7 +13,7 @@ export default function Nav() {
   }, [])
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-xl shadow-[0_1px_0_rgba(11,14,36,.06)]' : ''}`}>
+    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-xl shadow-[0_1px_0_rgba(11,14,36,.06)]' : 'bg-white/35 backdrop-blur-md'}`}>
       <div className="mx-auto max-w-7xl px-5 py-3 flex items-center justify-between">
         <a href="#top" aria-label="Essential Auto Detailing home">
           <img src="/ead-logo.svg" alt="Essential Auto Detailing" className="h-10 md:h-12 w-auto" />

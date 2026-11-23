@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Lenis from 'lenis'
 import Preloader from './components/Preloader.jsx'
 import Cursor from './components/Cursor.jsx'
 import Nav from './sections/Nav.jsx'
@@ -40,6 +41,16 @@ export default function App() {
         })
       })
     })
+    // Smooth, inertial scrolling (Lenis), kept in step with the scroll animations.
+    let lenis
+    let tick
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, anchors: true })
+      lenis.on('scroll', ScrollTrigger.update)
+      tick = (time) => lenis.raf(time * 1000)
+      gsap.ticker.add(tick)
+      gsap.ticker.lagSmoothing(0)
+    }
     // The pinned gallery changes page height, so measure again once everything has loaded.
     const refresh = () => ScrollTrigger.refresh()
     window.addEventListener('load', refresh)
@@ -48,6 +59,8 @@ export default function App() {
       ctx.revert()
       clearTimeout(t)
       window.removeEventListener('load', refresh)
+      if (tick) gsap.ticker.remove(tick)
+      if (lenis) lenis.destroy()
     }
   }, [])
 
