@@ -8,7 +8,7 @@ export default function About() {
       <div className="wrap grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         <div data-reveal="left" data-cursor className="relative h-[26rem] lg:h-[40rem] rounded-[2rem] overflow-hidden shadow-[0_40px_90px_-40px_rgba(61,65,154,.55)]">
           <RippleImage src="/img/about.jpg" className="absolute inset-0" />
-          <span className="absolute left-5 bottom-5 glass !bg-white/85 px-4 py-2 label">Move your mouse over the water</span>
+          <span className="max-md:!hidden absolute left-5 bottom-5 glass !bg-white/85 px-4 py-2 label">Move your mouse over the water</span>
         </div>
         <div>
           <p className="label eyebrow-gap">Driven by passion, defined by quality</p>

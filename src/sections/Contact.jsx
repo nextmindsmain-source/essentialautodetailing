@@ -17,11 +17,9 @@ export default function Contact() {
   }
   return (
     <section id="contact" className="relative bg-canvas">
-      {/* cinematic band */}
-      <div className="relative h-[70vh] min-h-[28rem] overflow-hidden" data-cursor>
-        <RippleImage src="/img/cta.jpg" className="absolute inset-0" />
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/85 via-white/20 to-transparent" />
-        <div className="absolute inset-0 flex items-center px-6 pointer-events-none">
+      {/* cinematic band: headline sits above the photo on phones, over it on larger screens */}
+      <div className="relative md:h-[70vh] md:min-h-[28rem] md:overflow-hidden">
+        <div className="relative z-10 px-5 pt-20 pb-8 md:absolute md:inset-0 md:flex md:items-center md:p-6 pointer-events-none">
           <div className="wrap">
             <p className="label eyebrow-gap">Book your detail</p>
             <h2 className="display text-[clamp(2.6rem,7vw,6rem)] max-w-3xl">
@@ -29,6 +27,10 @@ export default function Contact() {
               <span className="block text-ead-red"><SplitText text="the shine?" tag="span" textAlign="left" splitType="chars" effect="flip" delay={30} /></span>
             </h2>
           </div>
+        </div>
+        <div className="relative h-72 md:absolute md:inset-0 md:h-auto" data-cursor>
+          <RippleImage src="/img/cta.jpg" className="absolute inset-0" />
+          <div className="hidden md:block absolute inset-0 pointer-events-none bg-gradient-to-r from-white/85 via-white/20 to-transparent" />
         </div>
       </div>
 

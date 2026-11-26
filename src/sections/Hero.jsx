@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Phone } from 'lucide-react'
 import SplitText from '../components/reactbits/SplitText.jsx'
 import Magnet from '../components/reactbits/Magnet.jsx'
+import PhoneFilm from '../components/PhoneFilm.jsx'
 import { BIZ } from '../data.js'
 
 const VIDEO = '/hero.mp4'
 const POSTER = '/hero-poster.jpg'
-const POSTER_END = '/hero-end.jpg'
 
 // Where the car sits in the frame as the film plays: [progress, centre x in vw, centre y in vh].
 // The shine and glints follow it so they always land on the paint.
@@ -52,15 +52,14 @@ export default function Hero() {
   const glints = useRef([])
   const progress = useRef(0)
   const mouse = useRef({ x: 0, y: 0 })
-  // The film scrubs on tablets and desktops. Scrubbing is driven directly by your scroll, so it is
-  // not gated on the "reduce motion" setting (many Windows PCs report it without the user knowing).
-  const canScrub = useRef(typeof window !== 'undefined' && window.innerWidth >= 768).current
+  // Tablets and desktops scrub the video. Phones scrub a frame sequence (see PhoneFilm).
+  const phone = useRef(typeof window !== 'undefined' && window.innerWidth < 768).current
   const [ready, setReady] = useState(false)
   const readyRef = useRef(false)
 
   // Start scrubbing the moment the first frame is available, then swap in a fully downloaded copy.
   useEffect(() => {
-    if (!canScrub) return
+    if (phone) return
     let alive = true
     let url
     let raf
@@ -107,22 +106,10 @@ export default function Hero() {
       v.removeEventListener('loadeddata', start)
       if (url) URL.revokeObjectURL(url)
     }
-  }, [canScrub])
-
-  // Phones and small windows: the still image drifts and zooms slowly as you scroll.
-  useEffect(() => {
-    if (canScrub) return
-    const f = () => {
-      if (media.current) media.current.style.transform = `translate3d(0, ${window.scrollY * 0.12}px, 0) scale(${1.04 + Math.min(window.scrollY, 600) * 0.00022})`
-    }
-    f()
-    window.addEventListener('scroll', f, { passive: true })
-    return () => window.removeEventListener('scroll', f)
-  }, [canScrub])
+  }, [phone])
 
   // Everything that reacts to scroll and mouse: captions, parallax, exit transition, shine.
   useEffect(() => {
-    if (!canScrub) return
     let raf
     let lp = -1
     let lastMove = performance.now()
@@ -131,6 +118,7 @@ export default function Hero() {
     const CYCLE = 4800
     const SWEEP = 2000
     const onMove = (e) => {
+      if (e.pointerType !== 'mouse') return
       mouse.current.x = (e.clientX / window.innerWidth - 0.5) * 2
       mouse.current.y = (e.clientY / window.innerHeight - 0.5) * 2
     }
@@ -147,7 +135,7 @@ export default function Hero() {
       my += (mouse.current.y - my) * 0.06
       // if the film is not available yet (slow network), the still image zooms with your scroll instead
       const zoom = readyRef.current ? 1.06 : 1.06 + p * 0.22
-      media.current.style.transform = `translate3d(${mx * -16}px, ${my * -9}px, 0) scale(${zoom})`
+      if (!phone) media.current.style.transform = `translate3d(${mx * -16}px, ${my * -9}px, 0) scale(${zoom})`
 
       if (Math.abs(p - lp) > 0.0004) {
         lp = p
@@ -159,6 +147,11 @@ export default function Hero() {
         B.current.style.cssText = `opacity:${b};transform:translateY(${(1 - b) * 50}px)`
         C.current.style.cssText = `opacity:${c};transform:translateY(${(1 - c) * 50}px);pointer-events:${c > 0.5 ? 'auto' : 'none'}`
         bar.current.style.transform = `scaleY(${p})`
+      }
+
+      if (phone) {
+        raf = requestAnimationFrame(tick)
+        return
       }
 
       // the shine: follows the car; plays by itself when idle, follows the scroll while scrolling
@@ -191,18 +184,23 @@ export default function Hero() {
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onMove)
     }
-  }, [canScrub])
+  }, [phone])
 
   const shadow = { textShadow: '0 2px 28px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35)' }
 
   return (
-    <section id="top" ref={wrap} className="relative bg-[#0b0e24]" style={{ height: canScrub ? '420vh' : '100svh' }}>
+    <section id="top" ref={wrap} className="relative bg-[#0b0e24]" style={{ height: phone ? '340vh' : '420vh' }}>
       <div ref={stage} className="sticky top-0 h-svh overflow-hidden">
         {/* footage, slightly oversized so the mouse parallax never shows an edge */}
         <div ref={media} className="absolute inset-0 will-change-transform">
-          <img src={POSTER} alt="" className="absolute inset-0 hidden md:block h-full w-full object-cover" style={{ opacity: ready ? 0 : 1 }} />
-          <img src={POSTER_END} alt="" className="absolute inset-0 md:hidden h-full w-full object-cover object-[70%_center]" />
-          <video ref={vid} muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+          {phone ? (
+            <PhoneFilm progress={progress} />
+          ) : (
+            <>
+              <img src={POSTER} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ opacity: ready ? 0 : 1 }} />
+              <video ref={vid} muted playsInline preload="auto" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+            </>
+          )}
         </div>
 
         {/* soft light grade so white text always reads, without washing the car */}
@@ -229,17 +227,17 @@ export default function Hero() {
         ))}
 
         {/* beat 1: the promise (on the empty road at the right) */}
-        <div ref={A} className="absolute inset-0 z-10 hidden md:flex items-start pt-[22vh] px-6">
+        <div ref={A} className="absolute inset-0 z-10 flex items-start pt-24 md:pt-[22vh] px-6">
           <div className="wrap">
             <div className="max-w-xl md:ml-auto md:max-w-[24rem] text-white" style={shadow}>
-              <p className="label !text-white/85 mb-6">Mobile detailing · Welland &amp; Niagara</p>
-              <h1 className="display text-[clamp(2.3rem,4.1vw,3.8rem)]">
+              <p className="label !text-white/85 mb-4 md:mb-6">Mobile detailing · Welland &amp; Niagara</p>
+              <h1 className="display text-[clamp(2.4rem,4.1vw,3.8rem)]">
                 <SplitText text="Shine on" tag="span" textAlign="left" splitType="chars" effect="flip" delay={35} trigger="load" rootMargin="0px" className="block" />
                 <span className="block text-[#ff5558]">
                   <SplitText text="every mile." tag="span" textAlign="left" splitType="chars" effect="flip" delay={35} trigger="load" rootMargin="0px" />
                 </span>
               </h1>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-6 md:mt-8 flex flex-wrap items-center gap-3">
                 <Magnet padding={70} magnetStrength={3}>
                   <a href={BIZ.book} className="btn-red">Book online now <ArrowRight className="h-4 w-4" /></a>
                 </Magnet>
@@ -250,8 +248,8 @@ export default function Hero() {
         </div>
 
         {/* beat 2 */}
-        <div ref={B} className="absolute inset-x-0 top-[13vh] z-10 px-6 opacity-0 hidden md:block text-white" style={shadow}>
-          <div className="wrap flex justify-end">
+        <div ref={B} className="absolute inset-x-0 top-28 md:top-[13vh] z-10 px-6 opacity-0 text-white" style={shadow}>
+          <div className="wrap flex md:justify-end">
             <div className="max-w-sm">
               <p className="label !text-white/85 mb-4">We come to you</p>
               <p className="display text-[clamp(2rem,3.6vw,3.3rem)]">Clean, polished and on time.</p>
@@ -260,7 +258,7 @@ export default function Hero() {
         </div>
 
         {/* beat 3 */}
-        <div ref={C} className="absolute inset-0 z-10 px-6 opacity-0 hidden md:flex items-center text-white" style={shadow}>
+        <div ref={C} className="absolute inset-0 z-10 px-6 pt-28 md:pt-0 opacity-0 flex items-start md:items-center text-white pointer-events-none" style={shadow}>
           <div className="wrap">
             <div className="max-w-[24rem] text-left">
               <p className="label !text-white/85 mb-4">Parked and gleaming</p>
@@ -276,17 +274,6 @@ export default function Hero() {
         </div>
         <div className="absolute bottom-7 left-1/2 -translate-x-1/2 label !text-white/80 opacity-80 hidden md:block z-10">Scroll</div>
 
-        {/* phone: the still, with the headline above it */}
-        <div className="md:hidden absolute inset-0 z-10 flex items-start px-6 pt-28 text-white" style={shadow}>
-          <div>
-            <p className="label !text-white/85 mb-4">Mobile detailing · Welland &amp; Niagara</p>
-            <h1 className="display text-[2.6rem]">Shine on<br /><span className="text-[#ff5558]">every mile.</span></h1>
-            <div className="mt-7 flex flex-col items-start gap-3">
-              <a href={BIZ.book} className="btn-red">Book online now <ArrowRight className="h-4 w-4" /></a>
-              <a href={`tel:${BIZ.tel}`} className="btn-ghost !text-white !border-white/50 !bg-white/10"><Phone className="h-4 w-4" />{BIZ.phone}</a>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )

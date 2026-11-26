@@ -6,7 +6,7 @@ const ICONS = [CalendarCheck, Truck, ShieldCheck]
 
 export default function Process() {
   return (
-    <section id="process" className="section bg-white">
+    <section id="process" className="section bg-white overflow-clip">
       <div className="blob bg-ead-sky/25 h-96 w-96 -right-20 top-10" data-parallax="0.3" />
       <div className="wrap grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-20">
         <div className="lg:sticky lg:top-32 self-start">
@@ -26,7 +26,7 @@ export default function Process() {
                   <h3 className="display text-2xl md:text-3xl mb-2">{s.t}</h3>
                   <p className="text-mute leading-relaxed max-w-md">{s.d}</p>
                 </div>
-                <span className="icon-chip !h-14 !w-14 hidden sm:inline-flex"><Icon className="h-6 w-6" /></span>
+                <span className="icon-chip !h-14 !w-14 max-sm:!hidden"><Icon className="h-6 w-6" /></span>
               </li>
             )
           })}
